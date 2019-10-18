@@ -1,0 +1,17 @@
+[package]
+name    = "aoc2-trabalho2"
+version = "0.1.0"
+authors = ["fschnee <fbdsschaun@inf.ufpel.edu.br>"]
+edition = "2018"
+
+# Para poder ter testes tem que separar a lib do bin.
+[lib]
+name = "csimlib"
+path = "src/csimlib.rs"
+
+[[bin]]
+name = "cache-simulator"
+path = "src/main.rs"
+
+[dependencies]
+clap = {version = "2.33", features = ["yaml"]}
