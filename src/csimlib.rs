@@ -10,14 +10,15 @@ pub enum ReplacementPolicy{
 
 pub trait TryPowerOfTwo {
     fn try_power_of_two(&self) -> Result<Self, Self>
-        where Self: std::marker::Sized;
-}
-
-impl TryPowerOfTwo for u32 {
-    fn try_power_of_two(&self) -> Result<Self, Self> {
-        match (*self != 0) && ((*self & (*self - 1)) == 0) {
+        where Self: Copy + std::convert::Into<u64>
+    {
+        let converted: u64 = (*self).into();
+        match (converted != 0) && ((converted & (converted - 1)) == 0) {
             true => {Ok(*self)},
             false => {Err(*self)}
         }
     }
 }
+
+impl TryPowerOfTwo for u32{}
+impl TryPowerOfTwo for u64{}
