@@ -1,7 +1,7 @@
 [package]
 name    = "aoc2-trabalho2"
 version = "0.1.0"
-authors = ["fschnee <fbdsschaun@inf.ufpel.edu.br>", "Gabriel Gomes <gagomes@inf.ufpel.edu.br>"]
+authors = ["fschnee <fbdsschaun@inf.ufpel.edu.br>", "Gabriel Gomes <gabriel.almgom@gmail.com>"]
 edition = "2018"
 
 # Para poder ter testes tem que separar a lib do bin.

@@ -1,7 +1,7 @@
 name: cache_simulator
 about: Simula uma cachezin
 version: "1.0"
-author: Frederico S. <fbdsschaun@inf.ufpel.edu.br>, Gabriel G. <gagomes@inf.ufpel.edu.br>
+author: Frederico S. <fbdsschaun@inf.ufpel.edu.br>, Gabriel G. <gabriel.almgom@gmail.com>
 settings:
   - ArgRequiredElseHelp
   - SubcommandsNegateReqs
