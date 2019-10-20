@@ -9,7 +9,7 @@ fn main() {
     // mensagem de uso dizendo o que ta faltando, porém precisamos cuidar
     // se o argumento é do tipo certo nos unwrap() e value_t_or_exit!()
     if let Some(_x) = matches.subcommand_matches("full") {
-        println!("Rodar versão completa aqui");
+        println!("Ainda não implementado, volte mais tarde");
         //csimlib::full(args);
     }
     else {
@@ -35,12 +35,9 @@ fn main() {
             // possíveis valores para esse argumento.
             _  => {panic!();}
         };
-        let verbosity = clap::value_t_or_exit!(matches.value_of("verbosity"), u32);
-        let input_file = matches.value_of("input_file").unwrap();
+        let verbosity = clap::value_t_or_exit!(matches.value_of("verbosity"), i32);
+        let input_file = matches.value_of("input_file").unwrap().to_owned();
 
-        println!("Rodar versão normal aqui com:\ncsimlib::regular({}, {}, {}, csimlib::ReplacementPolicy::{:#?}, {}, {})",
-                 nsets, bsize, assoc, repl, verbosity, input_file);
-        // TODO: implementar
-        //csimlib::regular(nsets, bsize, assoc, repl, verbosity, input_file);
+        csimlib::regular::run_with(nsets, bsize, assoc, repl, verbosity, input_file);
     }
 }

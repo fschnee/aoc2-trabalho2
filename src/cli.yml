@@ -8,43 +8,28 @@ settings:
 
 args:
   - nsets:
-      help: Numero de conjuntos
+      help: :u32 --> Numero de conjuntos
       required: true
       index: 1
   - bsize:
-      help: Tamanho do bloco, em bytes
+      help: :u32 --> Tamanho do bloco, em bytes
       required: true
       index: 2
   - assoc:
-      help: Associatividade da cache
+      help: :u32 --> Associatividade da cache
       required: true
       index: 3
   - repl:
-      help: Política de substituição
+      help: :str --> Política de substituição
       required: true
       index: 4
-      possible_values:
-        - l
-        - lru
-        - L
-        - LRU
-        - Lru
-        - f
-        - fifo
-        - F
-        - FIFO
-        - Fifo
-        - r
-        - random
-        - R
-        - RANDOM
-        - Random
+      possible_values: [ l, lru, L, LRU, Lru, f, fifo, F, FIFO, Fifo, r, random, R, RANDOM, Random ]
   - verbosity:
-      help: Flag para dizer verbosidade, 1 é o modo de saida padrão, qualquer outro valor pode ser usado para debugar
+      help: :i32 --> Flag para dizer verbosidade, 1 é o modo de saida padrão, qualquer outro valor pode ser usado para debugar
       required: true
       index: 5
   - input_file:
-      help: Caminho para o arquivo de entrada (caminho absoluto ou relativo)
+      help: :str --> Caminho para o arquivo de entrada (absoluto ou relativo)
       required: true
       index: 6
 
