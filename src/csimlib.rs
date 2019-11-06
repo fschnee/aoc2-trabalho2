@@ -1,18 +1,12 @@
 pub mod full;
 pub mod regular;
-
-#[derive(Debug, PartialEq)]
-pub enum ReplacementPolicy{
-    Lru,
-    Fifo,
-    Random
-}
+pub mod cache;
 
 pub trait TryPowerOfTwo {
     fn try_power_of_two(&self) -> Result<Self, Self>
-        where Self: Copy + std::convert::Into<u64>
+        where Self: Copy + std::convert::Into<usize>
     {
-        let converted: u64 = (*self).into();
+        let converted: usize = (*self).into();
         match (converted != 0) && ((converted & (converted - 1)) == 0) {
             true => {Ok(*self)},
             false => {Err(*self)}
@@ -20,5 +14,4 @@ pub trait TryPowerOfTwo {
     }
 }
 
-impl TryPowerOfTwo for u32{}
-impl TryPowerOfTwo for u64{}
+impl TryPowerOfTwo for usize {}
