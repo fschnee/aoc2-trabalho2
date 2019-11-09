@@ -1,4 +1,3 @@
-
 #[test]
 fn create() {
     use csimlib::cache;
