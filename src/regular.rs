@@ -15,7 +15,8 @@ pub fn run_with(params: RunParams) -> () {
 
     let cache = super::cache::Cache::create(
         params.nsets,
-        params.bsize, params.repl,
+        params.bsize, 
+        params.repl,
         params.assoc,
         super::cache::Kind::Both);
 }
