@@ -1,5 +1,5 @@
 #[test]
-fn create() {
+fn cache_create_test() {
     use csimlib::cache;
 
     let nsets = 32;
