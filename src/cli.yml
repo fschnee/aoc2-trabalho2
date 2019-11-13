@@ -38,3 +38,40 @@ subcommands:
       about: Versão aprofundada do simulador
       version: "1.0"
       author: Frederico S. <fbdsschaun@inf.ufpel.edu.br>, Gabriel G. <gagomes@inf.ufpel.edu.br>
+  - regular_random:
+      about: Versão normal do simulador porém com números aleatórios para os endereços
+      version: "1.0"
+      author: Frederico S. <fbdsschaun@inf.ufpel.edu.br>
+      settings:
+        - ArgRequiredElseHelp
+        - SubcommandsNegateReqs
+
+      args:
+        - nsets:
+            help: :usize --> Numero de conjuntos
+            required: true
+            index: 1
+        - bsize:
+            help: :usize --> Tamanho do bloco, em bytes
+            required: true
+            index: 2
+        - assoc:
+            help: :usize --> Associatividade da cache
+            required: true
+            index: 3
+        - repl:
+            help: :str   --> Política de substituição
+            required: true
+            index: 4
+            possible_values: [ l, lru, L, LRU, Lru, f, fifo, F, FIFO, Fifo, r, random, R, RANDOM, Random ]
+        - verbosity:
+            help: :u8    --> Flag para dizer verbosidade, 1 é o modo de saida padrão, qualquer outro valor pode ser usado para debugar
+            required: true
+            index: 5
+        - inputsize:
+            help: usize --> Tamanho do vetor de input (quantidade de endereços)
+            required: true
+            index: 6
+        - seed:
+            help: u64   --> Seed usada para a geração do vetor de endereços
+            index: 7

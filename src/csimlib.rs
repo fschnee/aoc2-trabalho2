@@ -17,3 +17,8 @@ pub trait TryPowerOfTwo {
 }
 
 impl TryPowerOfTwo for usize {}
+
+pub enum Either<T1, T2> {
+    Left(T1),
+    Right(T2),
+}
