@@ -1,17 +1,51 @@
 pub struct RunParams {
-    nsets: usize,
-    bsize: usize,
-    assoc: usize,
-    repl: super::cache::ReplacementPolicy,
-    verbosity: u8,
-    input: Vec<u32>,
+    pub nsets: usize,
+    pub bsize: usize,
+    pub assoc: usize,
+    pub repl: super::cache::ReplacementPolicy,
+    pub verbosity: u8,
+    pub input: Vec<u32>,
 }
 
-pub fn run_with(params: RunParams) -> super::cache::Cache {
-    let nbits_indice = log_2(params.nsets);
-    let nbits_offset = log_2(params.bsize);
+pub fn run_with(params: &RunParams) -> super::cache::Cache {
+    let makemask = |toggled_bits: usize, offset: usize| -> Result<u32, String> {
+        if offset > std::mem::size_of::<u32>() * 8 {
+            Err(format!(
+                "offset recebido foi {}, que é maior que std::mem::size_of::<u32>() * 8",
+                offset
+            ))
+        } else {
+            Ok((2u32.pow(toggled_bits as u32) - 1) << offset)
+        }
+    };
+
+    let nbits_offset = if params.assoc != 1 {
+        log_2(params.bsize)
+    } else {
+        0
+    };
+    let offset_mask = std::num::NonZeroUsize::new(nbits_offset)
+        .map(|num| makemask(num.get(), 0).unwrap())
+        .unwrap_or(0);
+
+    let nbits_index = log_2(params.nsets);
+    let index_mask = std::num::NonZeroUsize::new(nbits_index)
+        .map(|num| makemask(num.get(), nbits_offset).unwrap())
+        .unwrap_or(0);
+
     let nbits_instrucao = 32;
-    let nbits_tag = nbits_instrucao - nbits_indice - nbits_offset;
+    let nbits_tag = nbits_instrucao - nbits_index - nbits_offset;
+    let tag_mask = std::num::NonZeroUsize::new(nbits_tag)
+        .map(|num| makemask(num.get(), nbits_index + nbits_offset).unwrap())
+        .unwrap_or(0);
+
+    if params.verbosity != 1 {
+        println!(
+            // Precisa ser com {:#034b} ao invez de 32 porque o '#' adiciona '0b' ao inicio.
+            "nbits_indice = {}\nindex_mask  = {:#034b}\nnbits_offset = {}\noffset_mask = {:#034b}\nnbits_tag = {}\ntag_mask    = {:#034b}",
+            nbits_index, index_mask, nbits_offset, offset_mask, nbits_tag, tag_mask
+        );
+    }
 
     let mut cache = super::cache::Cache::create(
         params.nsets,
@@ -21,40 +55,33 @@ pub fn run_with(params: RunParams) -> super::cache::Cache {
         super::cache::Kind::Both,
     );
 
-    for adress in params.input {
-        use super::cache::Conjunto;
+    for (iteration, adress) in params.input.iter().enumerate() {
+        let offset = (adress & offset_mask) as usize;
 
-        //println!("{:#8x}", adress);
-        cache.performance.accesses += 1;
+        let unshifted_index = adress & index_mask;
+        let index = (unshifted_index >> nbits_offset) as usize;
 
-        let indice = (adress as usize) >> (nbits_tag + nbits_indice);
-        let tag = ((adress as usize) << nbits_indice) >> (nbits_indice + nbits_offset);
+        let unshifted_tag = adress & tag_mask;
+        let tag = (unshifted_tag >> (nbits_index + nbits_offset)) as usize;
 
-        if let Some(_e) = cache.data[indice].get_elem_with_tag(tag) {
-            // Deu hit.
-            cache.performance.hits += 1;
+        let res = cache.access_with(index, tag, offset);
 
-            cache.data[indice].register_hit(tag, cache.info.repl);
-        } else {
-            // Deu miss, vamos ver o porquê:
-            cache.performance.misses += 1;
-
-            if cache.data[indice].uninitialized_slots() > 0 {
-                // Miss compulsório.
-                cache.performance.compulsory_misses += 1;
-                // Ocupa o slot porque ele vai ser enchido
-                cache.performance.slots_occupied += 1;
-            } else {
-                // O conjunto ta cheio então foi de conflito
-                cache.performance.conflict_misses += 1;
-
-                if cache.performance.slots_occupied == cache.info.total_slots {
-                    // Miss de capacidade (pode ser de conflito ainda também)
-                    cache.performance.capacity_misses += 1;
-                }
-            }
-
-            cache.data[indice].insert_tag(tag, cache.info.repl, &mut cache.info.rng);
+        if params.verbosity == 2 {
+            // Precisa ser com {:#034b} ao invez de 32 porque o '#' adiciona '0b' ao inicio.
+            println!("iteration = {}, ret = {:?}", iteration, res);
+            println!("adress = {0:#034b} {{{0}}}", adress);
+            println!("offset = {0:#034b} {{{0}}}", offset);
+            println!(
+                "index  = {0:#034b} ==lshift {1} bits==> {2:#034b} {{{2}}}",
+                unshifted_index, nbits_offset, index
+            );
+            println!(
+                "tag    = {0:#034b} ==lshift {1} bits==> {2:#034b} {{{2}}}",
+                unshifted_tag,
+                nbits_index + nbits_offset,
+                tag,
+            );
+            println!();
         }
     }
 
@@ -85,12 +112,13 @@ fn power_of_two_error(field_name: &str, value: usize) -> String {
 fn readfile(filename: &str) -> Result<Vec<u32>, String> {
     let raw_data: Vec<u8> = std::fs::read(filename).map_err(|e| format!("{:#?}", e))?;
     if raw_data.len() % std::mem::size_of::<u32>() != 0 {
-        Err("Input file has wrong byte alignment".to_owned())?
+        Err("Input file has wrong byte alignment".to_owned()
+            + "(cannot convert from Vec<u8> to Vec<u32> without clipping)")?
     }
 
     let final_data: Vec<u32> = unsafe {
         #[allow(clippy::cast_ptr_alignment)]
-        let temp: Vec<u32> = Vec::from_raw_parts(
+        let temp = Vec::from_raw_parts(
             raw_data.as_ptr() as *mut u32,
             raw_data.len() / std::mem::size_of::<u32>(),
             raw_data.capacity() / std::mem::size_of::<u32>(),
@@ -106,7 +134,9 @@ fn readfile(filename: &str) -> Result<Vec<u32>, String> {
 }
 
 #[test]
+#[ignore]
 fn readfile_test() {
+    // Só deve rodar se os arquivos estiverem presente.
     readfile("testfiles/bin_100.bin").unwrap();
     readfile("testfiles/bin_1000.bin").unwrap();
     readfile("testfiles/bin_10000.bin").unwrap();

@@ -1,4 +1,120 @@
 #[derive(Debug, PartialEq, Clone, Copy)]
+pub enum ReplacementPolicy {
+    Lru,
+    Fifo,
+    Random,
+}
+
+trait Conjunto {
+    fn has_tag(&self, tag: usize) -> bool;
+    fn get_index_by_tag(&self, tag: usize) -> Option<usize>;
+    fn uninitialized_slots(&self) -> usize;
+    fn first_vacant_slot_index(&self) -> Option<usize>;
+    fn insert_tag(&mut self, tag: usize, repl: ReplacementPolicy, rng: &mut rand::rngs::StdRng);
+    fn get_highest_replaceability_index(&self) -> Option<usize>;
+}
+
+impl Conjunto for Vec<Data> {
+    fn has_tag(&self, tag: usize) -> bool {
+        self.iter()
+            .any(|elem| elem.is_initialized && elem.tag == tag)
+    }
+
+    fn get_index_by_tag(&self, tag: usize) -> Option<usize> {
+        self.iter()
+            .enumerate()
+            .find(|(_, elem)| elem.tag == tag)
+            .map(|(index, _)| index.to_owned())
+    }
+
+    fn uninitialized_slots(&self) -> usize {
+        self.iter()
+            .fold(0, |acc, elem| acc + (!elem.is_initialized as usize))
+    }
+
+    fn first_vacant_slot_index(&self) -> Option<usize> {
+        self.iter()
+            .enumerate()
+            .find(|(_, elem)| !elem.is_initialized)
+            .map(|(index, _)| index.to_owned())
+    }
+
+    fn insert_tag(&mut self, tag: usize, repl: ReplacementPolicy, rng: &mut rand::rngs::StdRng) {
+        if self.has_tag(tag) && repl != ReplacementPolicy::Lru {
+            return;
+        }
+
+        match repl {
+            ReplacementPolicy::Random => {
+                if let Some(vacancy_index) = self.first_vacant_slot_index() {
+                    self[vacancy_index].is_initialized = true;
+                    self[vacancy_index].tag = tag;
+                } else {
+                    use rand::seq::SliceRandom;
+
+                    self.choose_mut(rng)
+                        .expect("Tentou escolher número aleatório de um conjunto de 0 vias")
+                        .tag = tag;
+                }
+            }
+            ReplacementPolicy::Fifo => {
+                if let Some(vacancy_index) = self.first_vacant_slot_index() {
+                    self[vacancy_index].is_initialized = true;
+                    self[vacancy_index].tag = tag;
+                    self[vacancy_index].replaceability = 0;
+                } else if let Some(replaced_index) = self.get_highest_replaceability_index() {
+                    self[replaced_index].tag = tag;
+                    self[replaced_index].replaceability = 0;
+                }
+
+                self.iter_mut().for_each(|elem| elem.replaceability += 1);
+            }
+            ReplacementPolicy::Lru => {
+                if self.has_tag(tag) {
+                    let tagged_index = self.get_index_by_tag(tag).unwrap();
+                    let tagged_replaceability = self[tagged_index].replaceability;
+                    self.iter_mut().for_each(|elem| {
+                        if elem.replaceability < tagged_replaceability {
+                            elem.replaceability += 1;
+                        }
+                    });
+                    self[tagged_index].replaceability = 1;
+                } else if let Some(vacancy_index) = self.first_vacant_slot_index() {
+                    self[vacancy_index].is_initialized = true;
+                    self[vacancy_index].tag = tag;
+                    self[vacancy_index].replaceability = 0;
+                    self.iter_mut().for_each(|elem| elem.replaceability += 1);
+                } else {
+                    let replaced_index = self.get_highest_replaceability_index().unwrap();
+                    let replaced_replaceability = self[replaced_index].replaceability;
+                    self.iter_mut().for_each(|elem| {
+                        if elem.replaceability < replaced_replaceability {
+                            elem.replaceability += 1;
+                        }
+                    });
+                    self[replaced_index].tag = tag;
+                    self[replaced_index].replaceability = 1;
+                }
+            }
+        }
+    }
+
+    fn get_highest_replaceability_index(&self) -> Option<usize> {
+        self.iter()
+            .enumerate()
+            .scan(None, |state: &mut Option<usize>, (index, elem)| {
+                if elem.is_initialized && !(state.is_some() && state.unwrap() > elem.replaceability)
+                {
+                    *state = Some(index);
+                }
+
+                *state
+            })
+            .last()
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Kind {
     Data,
     Instruction,
@@ -12,93 +128,8 @@ pub struct Performance {
     pub hits: usize,
     pub misses: usize,
     pub compulsory_misses: usize,
-    pub conflict_misses: usize,
     pub capacity_misses: usize,
-}
-
-#[derive(Debug, PartialEq, Clone, Copy)]
-pub enum ReplacementPolicy {
-    Lru,
-    Fifo,
-    Random,
-}
-
-pub trait Conjunto {
-    fn get_elem_with_tag(&self, tag: usize) -> Option<&Data>;
-    fn uninitialized_slots(&self) -> usize;
-    fn insert_tag(&mut self, tag: usize, repl: ReplacementPolicy, rng: &mut rand::rngs::StdRng);
-    fn get_highest_replaceability_mut(&mut self) -> Option<&mut Data>;
-    fn register_hit(&mut self, tag: usize, repl: ReplacementPolicy);
-}
-
-impl Conjunto for Vec<Data> {
-    fn get_elem_with_tag(&self, tag: usize) -> Option<&Data> {
-        self.iter()
-            .find(|&elem| elem.is_initialized && elem.tag == tag)
-    }
-
-    fn uninitialized_slots(&self) -> usize {
-        self.iter()
-            .fold(0, |acc, elem| acc + (!elem.is_initialized as usize))
-    }
-
-    fn insert_tag(&mut self, tag: usize, repl: ReplacementPolicy, rng: &mut rand::rngs::StdRng) {
-        match repl {
-            ReplacementPolicy::Lru | ReplacementPolicy::Fifo => {
-                if let Some(elem) = self.get_highest_replaceability_mut() {
-                    elem.tag = tag;
-                    elem.replaceability = 0;
-                } else {
-                    self[0].tag = tag;
-                    self[0].replaceability = 0;
-                }
-
-                self.iter_mut().for_each(|elem| elem.replaceability += 1);
-            }
-            ReplacementPolicy::Random => {
-                if let Some(elem) = self.iter_mut().find(|elem| !elem.is_initialized) {
-                    elem.is_initialized = true;
-                    elem.tag = tag;
-                } else {
-                    use rand::seq::SliceRandom;
-
-                    self.choose_mut(rng)
-                        .expect("Tentou escolher número aleatório de um conjunto de 0 vias")
-                        .tag = tag;
-                }
-            }
-        }
-    }
-
-    fn get_highest_replaceability_mut(&mut self) -> Option<&mut Data> {
-        let mut highest: Option<&mut Data> = None;
-        for data in self.iter_mut() {
-            if data.is_initialized {
-                if let Some(otherdata) = &highest {
-                    if data.replaceability > otherdata.replaceability {
-                        highest = Some(data);
-                    }
-                } else {
-                    highest = Some(data);
-                }
-            }
-        }
-
-        highest
-    }
-
-    // Assume que existe um elemento com a tag.
-    fn register_hit(&mut self, tag: usize, repl: ReplacementPolicy) {
-        if repl != ReplacementPolicy::Lru {
-            return;
-        }
-
-        let elem: &mut Data = self.iter_mut().find(|elem| elem.tag == tag).unwrap();
-        if elem.replaceability != 1 {
-            elem.replaceability = 0;
-            self.iter_mut().for_each(|e| e.replaceability += 1);
-        }
-    }
+    pub conflict_misses: usize,
 }
 
 #[derive(Debug)]
@@ -186,4 +217,70 @@ impl Cache {
             },
         }
     }
+
+    pub fn print_perf(&self, verbosity: u8) {
+        if verbosity == 1 {
+            println!(
+                "{}, {}, {}, {}, {}, {}",
+                self.performance.accesses,
+                self.performance.hits as f64 / self.performance.accesses as f64,
+                self.performance.misses as f64 / self.performance.accesses as f64,
+                self.performance.compulsory_misses as f64 / self.performance.misses as f64,
+                self.performance.capacity_misses as f64 / self.performance.misses as f64,
+                self.performance.conflict_misses as f64 / self.performance.misses as f64
+            );
+        } else {
+            println!("{:#?}", self.performance);
+        }
+    }
+
+    pub fn access_with(&mut self, index: usize, tag: usize, _offset: usize) -> AccessResult {
+        self.performance.accesses += 1;
+
+        if self.data[index].has_tag(tag) {
+            self.performance.hits += 1;
+
+            self.data[index].insert_tag(tag, self.info.repl, &mut self.info.rng);
+
+            AccessResult::Hit
+        } else {
+            self.performance.misses += 1;
+
+            if self.data[index].uninitialized_slots() > 0 {
+                self.performance.compulsory_misses += 1;
+                // Ocupa o slot porque ele vai ser enchido
+                self.performance.slots_occupied += 1;
+                self.data[index].insert_tag(tag, self.info.repl, &mut self.info.rng);
+
+                AccessResult::Miss(MissTypes::Compulsory)
+            } else {
+                self.performance.conflict_misses += 1;
+
+                if self.info.assoc > 1 && self.performance.slots_occupied == self.info.total_slots {
+                    self.performance.capacity_misses += 1;
+                    self.data[index].insert_tag(tag, self.info.repl, &mut self.info.rng);
+
+                    AccessResult::Miss(MissTypes::CapacityAndConflict)
+                } else {
+                    self.data[index].insert_tag(tag, self.info.repl, &mut self.info.rng);
+
+                    AccessResult::Miss(MissTypes::Conflict)
+                }
+            }
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub enum AccessResult {
+    Hit,
+    Miss(MissTypes),
+}
+
+#[derive(Debug, PartialEq)]
+pub enum MissTypes {
+    Compulsory,
+    Capacity,
+    Conflict,
+    CapacityAndConflict,
 }
