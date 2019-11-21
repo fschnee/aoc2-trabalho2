@@ -9,21 +9,28 @@ pub struct RunParams {
 
 pub fn run_with(params: &RunParams) -> super::cache::Cache {
     let makemask = |toggled_bits: usize, offset: usize| -> Result<u32, String> {
-        if offset > std::mem::size_of::<u32>() * 8 {
-            Err(format!(
-                "offset recebido foi {}, que é maior que std::mem::size_of::<u32>() * 8",
-                offset
-            ))
-        } else {
-            Ok((2u32.pow(toggled_bits as u32) - 1) << offset)
+        let tot_bits = std::mem::size_of::<u32>() * 8;
+        match offset.cmp(&tot_bits) {
+            std::cmp::Ordering::Greater => {
+                Err(format!(
+                    "offset recebido foi {}, que é maior que std::mem::size_of::<u32>() * 8",
+                    offset
+                ))
+            },
+            std::cmp::Ordering::Equal => {
+                Ok(0)
+            },
+            std::cmp::Ordering::Less => {
+                if toggled_bits >= tot_bits {
+                    Ok(u32::max_value() << offset)
+                } else {
+                    Ok((2u32.pow(toggled_bits as u32) - 1) << offset)
+                }
+            }
         }
     };
 
-    let nbits_offset = if params.assoc != 1 {
-        log_2(params.bsize)
-    } else {
-        0
-    };
+    let nbits_offset = log_2(params.bsize);
     let offset_mask = std::num::NonZeroUsize::new(nbits_offset)
         .map(|num| makemask(num.get(), 0).unwrap())
         .unwrap_or(0);
@@ -135,8 +142,8 @@ fn readfile(filename: &str) -> Result<Vec<u32>, String> {
 
 #[test]
 #[ignore]
+// Só deve rodar se os arquivos estiverem presente.
 fn readfile_test() {
-    // Só deve rodar se os arquivos estiverem presente.
     readfile("testfiles/bin_100.bin").unwrap();
     readfile("testfiles/bin_1000.bin").unwrap();
     readfile("testfiles/bin_10000.bin").unwrap();

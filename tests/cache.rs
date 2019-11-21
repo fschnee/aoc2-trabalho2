@@ -18,3 +18,31 @@ fn cache_create_test() {
     assert_eq!(cache.info.bsize, bsize);
     assert_eq!(cache.info.repl, repl);
 }
+
+#[test]
+#[ignore]
+// Só deve rodar se os arquivos estiverem presente.
+// Testes baseados nos exemplos dados (mandados por email).
+fn control_tests() {
+    use csimlib::regular;
+
+
+    let args_list = vec![
+        //vec![nsets, bsize, assoc, repl, verbosity, input]
+        vec!["256", "4", "1", "R", "1", "testfiles/bin_100.bin"],
+        vec!["256", "4", "1", "R", "1", "testfiles/bin_1000.bin"],
+        vec!["256", "4", "1", "R", "1", "testfiles/bin_10000.bin"],
+        vec!["64", "4", "1", "R", "1", "testfiles/bin_100.bin"],
+        vec!["64", "4", "1", "R", "1", "testfiles/bin_1000.bin"],
+        vec!["64", "4", "1", "R", "1", "testfiles/bin_10000.bin"],
+        vec!["32", "8", "1", "R", "1", "testfiles/bin_100.bin"],
+        vec!["32", "8", "1", "R", "1", "testfiles/bin_1000.bin"],
+        vec!["32", "8", "1", "R", "1", "testfiles/bin_10000.bin"],
+
+    ];
+
+    for args in args_list {
+        let params = regular::parse_and_validate(args[0], args[1], args[2], args[3], args[4], csimlib::Either::Left(args[5])).unwrap();
+        regular::run_with(&params).print_perf(params.verbosity);
+    }
+}
