@@ -281,5 +281,4 @@ pub enum MissTypes {
     Compulsory,
     Capacity,
     Conflict,
-    CapacityAndConflict,
 }
