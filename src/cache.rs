@@ -253,19 +253,18 @@ impl Cache {
                 self.data[index].insert_tag(tag, self.info.repl, &mut self.info.rng);
 
                 AccessResult::Miss(MissTypes::Compulsory)
+            } else if self.performance.slots_occupied == self.info.total_slots {
+                self.performance.capacity_misses += 1;
+
+                self.data[index].insert_tag(tag, self.info.repl, &mut self.info.rng);
+
+                AccessResult::Miss(MissTypes::Capacity)
             } else {
                 self.performance.conflict_misses += 1;
 
-                if self.info.assoc > 1 && self.performance.slots_occupied == self.info.total_slots {
-                    self.performance.capacity_misses += 1;
-                    self.data[index].insert_tag(tag, self.info.repl, &mut self.info.rng);
+                self.data[index].insert_tag(tag, self.info.repl, &mut self.info.rng);
 
-                    AccessResult::Miss(MissTypes::CapacityAndConflict)
-                } else {
-                    self.data[index].insert_tag(tag, self.info.repl, &mut self.info.rng);
-
-                    AccessResult::Miss(MissTypes::Conflict)
-                }
+                AccessResult::Miss(MissTypes::Conflict)
             }
         }
     }
