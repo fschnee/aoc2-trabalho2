@@ -34,10 +34,6 @@ args:
       index: 6
 
 subcommands:
-  - full:
-      about: Versão aprofundada do simulador
-      version: "1.0"
-      author: Frederico S. <fbdsschaun@inf.ufpel.edu.br>, Gabriel G. <gagomes@inf.ufpel.edu.br>
   - regular_random:
       about: Versão normal do simulador porém com números aleatórios para os endereços
       version: "1.0"

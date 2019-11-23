@@ -9,9 +9,7 @@ fn main() {
     // No caso de argumento em falta o clap automaticamente imprime uma
     // mensagem de uso dizendo o que ta faltando, porém precisamos cuidar
     // se o argumento é do tipo certo nos unwrap() e value_t_or_exit!()
-    if let Some(_x) = matches.subcommand_matches("full") {
-        unimplemented!();
-    } else if let Some(submatches) = matches.subcommand_matches("regular_random") {
+    if let Some(submatches) = matches.subcommand_matches("regular_random") {
         use rand::RngCore;
 
         let input = (
@@ -22,7 +20,7 @@ fn main() {
                 .unwrap_or_else(|| rand::thread_rng().next_u64().to_string()),
         );
 
-        let params = csimlib::regular::parse_and_validate(
+        let params = csimlib::parse_and_validate(
             submatches.value_of("nsets").unwrap(),
             submatches.value_of("bsize").unwrap(),
             submatches.value_of("assoc").unwrap(),
@@ -35,9 +33,9 @@ fn main() {
             std::process::exit(1);
         });
 
-        csimlib::regular::run_with(&params).print_perf(params.verbosity);
+        csimlib::run_with(&params).print_perf(params.verbosity);
     } else {
-        let params = csimlib::regular::parse_and_validate(
+        let params = csimlib::parse_and_validate(
             matches.value_of("nsets").unwrap(),
             matches.value_of("bsize").unwrap(),
             matches.value_of("assoc").unwrap(),
@@ -50,6 +48,6 @@ fn main() {
             std::process::exit(1);
         });
 
-        csimlib::regular::run_with(&params).print_perf(params.verbosity);
+        csimlib::run_with(&params).print_perf(params.verbosity);
     };
 }
