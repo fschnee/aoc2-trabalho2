@@ -12,7 +12,7 @@
 
 
 # Introdução
-O simulador foi desenvolvido na linguagem rust pelos alunos Frederico Schaun
+O simulador foi desenvolvido na linguagem *rust* pelos alunos Frederico Schaun
 e Gabriel Gomes, seguindo as especificações do trabalho, adicionando também as
 seguintes funcionalidades extra:
 
@@ -289,7 +289,7 @@ significa que `Miss` carrega uma informação extra, o tipo do miss, ou seja, é
 fn funcao_exemplo() {
     use csimlib::cache::*;
 
-    let mut cache = Cache::create_with(/* args aqui */);
+    let mut cache = Cache::create(/* args aqui */);
     let resultado = cache.acess_with(/* args aqui */);
 
     match resultado {
