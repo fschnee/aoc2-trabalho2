@@ -50,7 +50,7 @@ Para o resto deste relatório a forma de rodar o programa (tudo antes de
 # Funcionamento
 O simulador foi escrito, como previamente dito, em [*rust*][2] (uma linguagem
 moderna de *systems programming*) e usa dois pacotes (chamados *crates* no
-ecosistema *rust*): [*clap*][3] e [*rand*][4], para a interface de linha de
+ecossistema *rust*): [*clap*][3] e [*rand*][4], para a interface de linha de
 comando e geração de números aleatórios, respectivamente.
 
 O projeto contém 5 (cinco) arquivos de código fonte, sendo 3 (três) deles
@@ -71,8 +71,8 @@ seguinte maneira:
 
 ## Command-line interface (CLI)
 O programa segue a interface requisitada no enunciado do trabalho, porém
-conta com algumas ferramentas à mais devido ao *clap*. Essa sessão
-irá detalhar somente o funcionamento extra.
+conta com algumas ferramentas à mais devido ao *clap*. Essa seção irá detalhar
+somente o funcionamento extra.
 
 Rodando o programa das seguintes formas
 
@@ -153,8 +153,8 @@ A tela de ajuda desse subcomando é a seguinte:
         <inputsize>    usize --> Tamanho do vetor de input (quantidade de endereços)
         <seed>         u64   --> Seed usada para a geração do vetor de endereços
 
-No entando, o vetor dos endereços de entrada é do tipo `u64`, ou seja, um inteiro
-positivo de 64 bits, o que torna muito improvável de acontecer um hit e, por isso,
+No entando, o vetor dos endereços de entrada é do tipo `u32`, ou seja, um inteiro
+positivo de 32 bits, o que torna muito improvável de acontecer um hit e, por isso,
 esse subcomando é util somente para testar o processamento dos endereços de
 entrada (separação em *tag*, *index* e *offset*).
 
